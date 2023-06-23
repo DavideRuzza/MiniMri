@@ -1,0 +1,14 @@
+figure.facecolor : "#171717"
+
+
+
+axes.labelcolor : "#bbb"
+axes.titlecolor : "#fff"
+axes.titlesize : "large"
+axes.labelsize : "10"
+xtick.color : "#bbb"
+xtick.labelcolor : "#bbb"
+
+ytick.color : "#bbb"
+ytick.labelcolor : "#bbb"
+
