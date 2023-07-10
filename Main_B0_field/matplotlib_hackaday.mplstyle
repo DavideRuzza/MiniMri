@@ -1,0 +1,34 @@
+figure.facecolor : "#171717"
+
+text.usetex: False
+
+axes.linewidth : 1.0
+axes.facecolor : "#171717"
+axes.edgecolor: "#bbb"
+axes.labelcolor : "#fff"
+axes.titlecolor : "#fff"
+axes.titlesize : "x-large"
+axes.labelsize : "large"
+axes.titlepad: 12
+axes.labelpad: 4
+
+xtick.color : "#bbb"
+xtick.labelcolor : "#bbb"
+xtick.top: False
+xtick.major.size: 5
+xtick.direction: "out"
+xtick.major.width: 1
+
+ytick.color : "#bbb"
+ytick.labelcolor : "#bbb"
+ytick.major.size: 5
+ytick.direction: "out"
+ytick.major.width: 1
+
+legend.labelcolor : "#eee"
+legend.framealpha : 1.0
+
+grid.linestyle: ((2,6))
+grid.linewidth : 0.6
+grid.alpha : 0.6
+
