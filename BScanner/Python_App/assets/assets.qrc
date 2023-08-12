@@ -1,0 +1,8 @@
+<RCC>
+  <qresource prefix="newPrefix">
+    <file>download.png</file>
+    <file>center_img.png</file>
+    <file>corner_img.png</file>
+    <file>home.png</file>
+  </qresource>
+</RCC>
