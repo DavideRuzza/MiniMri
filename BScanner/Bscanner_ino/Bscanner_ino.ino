@@ -75,79 +75,7 @@ void setup() {
   z_step.setAcceleration(z_acc);
   digitalWrite(EN,HIGH);
 
-//  while(1){
-//    Serial.print(digitalRead(xlim));
-//    Serial.print(' ');
-//    Serial.print(digitalRead(ylim));
-//    Serial.print(' ');
-//    Serial.println(digitalRead(zlim));
-//  }
-//  z_step.move(1000);
-//  digitalWrite(EN, LOW);
-//  while(z_step.run()){};
-//  digitalWrite(EN, HIGH);
-  
-}
-
-void loop() {
-
-//  Serial.print(readAdcV());
-//  Serial.print(",");
-//  Serial.print(3);
-//  Serial.print(",");
-//  Serial.println(-3);
-  
-  while (Serial.available() > 0) {
-    char cmd = Serial.read();
-    delay(1);
-    char axis = Serial.read();
-    float distance = Serial.parseFloat();
-    String end_str = Serial.readStringUntil('\n');
-    
-    if (cmd == 'M'){ // moving
-      Serial.println(cmd);
-      if (axis == 'X') {
-        x_step.move(distance*x_step_per_mm*xmul*xdi);
-        digitalWrite(EN, LOW);
-        while(x_step.run()){};
-        digitalWrite(EN, HIGH);
-      } else if (axis=='Y') {
-        y_step.move(distance*y_step_per_mm*ymul*ydi);
-        digitalWrite(EN, LOW);
-        while(y_step.run()){};
-        digitalWrite(EN, HIGH);
-      } else if (axis=='Z') {
-        z_step.move(distance*z_step_per_mm*zmul*ydi);
-        digitalWrite(EN, LOW);
-        while(z_step.run()){};
-        digitalWrite(EN, HIGH);
-      }
-    }
-    
-    if (cmd == 'H') {// homing
-      
-      if (axis == 'X') {
-          home_stepper(x_step, xdi, xlim, 1, x_step_per_mm, x_max_vel, x_acc, x_pos);
-        } else if (axis == 'Y') {
-          home_stepper(y_step, ydi, ylim, 1, y_step_per_mm, y_max_vel, y_acc, y_pos);
-        } else if (axis == 'Z') {
-          home_stepper(z_step, zdi, zlim, 1, z_step_per_mm, z_max_vel, z_acc, z_pos);
-      }
-      Serial.println(cmd);
-    }
-    if (cmd == 'R'){
-      float val = 0;
-      for (int i = 0; i<5; i++){
-        val += readAdcmT();
-      }
-      val/=2;
-//      Serial.println(val);
-      write_float(val);
-//      Serial.println();
-    }
-    
-  }
-  
+  Serial.write(0xff);
 }
 
 void home_step(AccelStepper &stepper, int dir, int pin, bool std_val, float max_vel){
@@ -187,13 +115,13 @@ void home_stepper(AccelStepper &stepper, int dir, int pin, bool std_val, float s
   pos = 0;
 }
 
-float readAdcV(){
+float readAdc_V(){
 
   float volts = adc.computeVolts(adc.readADC_Differential_2_3());
   return volts; //volts to milliTesla
 }
 
-float readAdcmT(){
+float readAdc_mT(){
 
   float volts = adc.computeVolts(adc.readADC_Differential_2_3());
   return volts*72.7; //volts to milliTesla
@@ -205,4 +133,190 @@ void write_float(float val){
   Serial.write(val_int>>16&0xff);
   Serial.write(val_int>>8&0xff);
   Serial.write(val_int&0xff);
+  Serial.write(0x00);
 }
+
+
+void loop() {
+
+  char buf[5] = {};
+  int i = 0;
+  while (true){
+    if (Serial.available()){
+      char c = Serial.read();
+      if (c=='\n' && i >4){
+        break;
+      }
+      if (i<=4){
+        buf[i] = c;
+        i++;
+      }
+    }
+  }
+  char cmd = buf[0];
+  long val_fl = ((long)buf[1]<<24)&0xff000000 | ((long)buf[2]<<16)&0x00ff0000 | ((long)buf[3]<<8)&0x0000ff00 | (long)buf[4]&0x000000ff;
+  float value = * (float *) &val_fl;
+  
+//  while (Serial.available() > 0) {
+//    char cmd = Serial.read();
+//    float value = Serial.parseFloat();
+//    String end_str = Serial.readStringUntil('\n');
+
+  switch(cmd){
+    case 0x01: //move_mm x
+    {
+      float x_mm = value;
+      x_step.move(x_mm*x_step_per_mm*xmul*xdi);
+      digitalWrite(EN, LOW);
+      while(x_step.run()){};
+      digitalWrite(EN, HIGH);
+      x_pos+=x_mm;
+      Serial.write(0x01);
+      write_float(x_pos);
+    }break;
+
+    case 0x02: //move_mm y
+    {
+      float y_mm = value;
+      y_step.move(y_mm*y_step_per_mm*ymul*ydi);
+      digitalWrite(EN, LOW);
+      while(y_step.run()){};
+      digitalWrite(EN, HIGH);
+      y_pos+=y_mm;
+      Serial.write(0x02);
+      write_float(y_pos);
+    }break;
+
+    case 0x03: //move_mm z
+    {
+      float z_mm = value;
+      z_step.move(z_mm*z_step_per_mm*zmul*zdi);
+      digitalWrite(EN, LOW);
+      while(z_step.run()){};
+      digitalWrite(EN, HIGH);
+      z_pos+=z_mm;
+      Serial.write(0x03);
+      write_float(z_pos);
+    }break;
+
+    case 0x04: // home x
+    {
+      home_stepper(x_step, xdi, xlim, 1, x_step_per_mm, x_max_vel, x_acc, x_pos);
+      Serial.write(0x04);
+      write_float(x_pos);
+    }break;
+
+    case 0x05: // home y
+    {
+      home_stepper(y_step, ydi, ylim, 1, y_step_per_mm, y_max_vel, y_acc, y_pos);
+      Serial.write(0x05);
+      write_float(y_pos);
+    }break;
+
+    case 0x06: // home z
+    {
+      home_stepper(z_step, zdi, zlim, 1, z_step_per_mm, z_max_vel, z_acc, z_pos);
+      Serial.write(0x06);
+      write_float(z_pos);
+    }break;
+    case 0x07: //move to x pos
+    {
+      float x_mm = (value-x_pos);
+      x_step.move(x_mm*x_step_per_mm*xmul*xdi);
+      digitalWrite(EN, LOW);
+      while(x_step.run()){};
+      digitalWrite(EN, HIGH);
+      x_pos+=x_mm;
+      Serial.write(0x07);
+      write_float(x_pos);
+    }break;
+    
+    case 0x08: //move to y pos
+    {
+      float y_mm = (value-y_pos);
+      y_step.move(y_mm*y_step_per_mm*ymul*ydi);
+      digitalWrite(EN, LOW);
+      while(y_step.run()){};
+      digitalWrite(EN, HIGH);
+      y_pos+=y_mm;
+      Serial.write(0x08);
+      write_float(y_pos);
+    }break;
+
+    case 0x09: //move to z pos
+    {
+      float z_mm = (value-z_pos);
+      z_step.move(z_mm*z_step_per_mm*zmul*zdi);
+      digitalWrite(EN, LOW);
+      while(z_step.run()){};
+      digitalWrite(EN, HIGH);
+      z_pos+=z_mm;
+      Serial.write(0x09);
+      write_float(z_pos);
+    }break;
+
+    case 0x0b: //Read Adc
+    
+    {
+      float val = 0;
+      for (int i = 0; i<5; i++){
+        val += readAdc_mT();
+      }
+      val/=5;
+      write_float(val);
+    }break;
+    default:
+    {
+      Serial.write(0xff);
+      write_float(0.0);
+    }break;
+  }
+}
+    /*
+    if (cmd == 'M'){ // moving
+      if (axis == 'X') {
+        x_step.move(distance*x_step_per_mm*xmul*xdi);
+        digitalWrite(EN, LOW);
+        while(x_step.run()){};
+        digitalWrite(EN, HIGH);
+      } else if (axis=='Y') {
+        y_step.move(distance*y_step_per_mm*ymul*ydi);
+        digitalWrite(EN, LOW);
+        while(y_step.run()){};
+        digitalWrite(EN, HIGH);
+      } else if (axis=='Z') {
+        z_step.move(distance*z_step_per_mm*zmul*ydi);
+        digitalWrite(EN, LOW);
+        while(z_step.run()){};
+        digitalWrite(EN, HIGH);
+      }
+      Serial.write(\x01);
+    }
+    
+    else if (cmd == 'H') {// homing
+      
+      if (axis == 'X') {
+          home_stepper(x_step, xdi, xlim, 1, x_step_per_mm, x_max_vel, x_acc, x_pos);
+        } else if (axis == 'Y') {
+          home_stepper(y_step, ydi, ylim, 1, y_step_per_mm, y_max_vel, y_acc, y_pos);
+        } else if (axis == 'Z') {
+          home_stepper(z_step, zdi, zlim, 1, z_step_per_mm, z_max_vel, z_acc, z_pos);
+      }
+      Serial.println(cmd);
+    }
+    else if (cmd == 'R'){
+      float val = 0;
+      for (int i = 0; i<5; i++){
+        val += readAdcmT();
+      }
+      val/=2;
+//      Serial.println(val);
+      write_float(val);
+//      Serial.println();
+    }
+    else {
+      
+    }
+    
+  }
+  */

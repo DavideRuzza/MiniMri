@@ -20,6 +20,9 @@ import struct
 from perlin import perlin
 from time import sleep
 import threading
+import pathlib
+
+
 
 class SpaceMeasureWorker(QObject):
 
@@ -151,6 +154,42 @@ class SpaceMeasureWorker(QObject):
         self.finished_sig.emit()
         self.update_sig.emit()
 
+class TimeMeasureWorker(QObject):
+
+    finished_sig = pyqtSignal()
+    stopped_sig = pyqtSignal()
+    update_sig = pyqtSignal()
+
+    def __init__(self, main_win):
+        super(TimeMeasureWorker, self).__init__()
+        self.mw = main_win
+
+    def run(self):
+        t_step = float(self.mw.time_step_cb.currentText())
+        t_span = self.mw.time_sb.value()
+        
+        t_steps = np.arange(0, t_span, t_step)
+
+        self.mw.plot_arr = np.zeros((len(t_steps), 2))
+
+        for i, t in enumerate(t_steps):
+            with self.mw.lock:
+                if self.mw.stop_measure:
+                    self.mw.stop_measure = False
+                    print("end z")
+                    break
+            sleep(t_step)
+            self.mw.operation(self.mw.VALUE, self.mw.NULL)
+            self.mw.thread_ev.wait()
+
+            self.mw.plot_arr[i,0] = t
+            self.mw.plot_arr[i,1] = self.mw.curr_value
+            self.mw.update_plot(i)
+
+        print("end measure")
+        self.finished_sig.emit()
+        self.update_sig.emit()
+        
 class Ui_MainWindow(object):
 
     def report(self, msg):
@@ -215,9 +254,7 @@ class Ui_MainWindow(object):
                 self.port = serial.Serial(self.COM, self.BAUDRATE)
                 self.port.reset_input_buffer()
                 self.port.reset_output_buffer()
-                sleep(3)
-                self.operation(b'\xff', self.NULL)
-                self.thread_ev.wait()
+                sleep(2)
                 self.operation(b'\xff', self.NULL)
                 self.thread_ev.wait()
 
@@ -241,6 +278,7 @@ class Ui_MainWindow(object):
                 self.thread_ev.clear()
                 self.thread = threading.Thread(target=self.response_handle)
                 self.thread.start()
+                print("Operation",cmd)
         except Exception as e:
             print(e)
 
@@ -256,13 +294,15 @@ class Ui_MainWindow(object):
             self.z_pos = val
 
     def response_handle(self):
-        while (self.port.inWaiting()<5):
+        while (self.port.inWaiting()<6):
             pass
-        
+        a = self.port.read(1)
         cmd = self.port.read(1)
         val = self.port.read(4)
         val = struct.unpack('>f', val)[0]
-        # print(cmd, val)
+
+        print("Response:", a, cmd, val)
+        print(cmd, val)
         if cmd==b'\x01':
             self.set_ax_position(0, val)
         elif cmd==b'\x02':
@@ -270,6 +310,7 @@ class Ui_MainWindow(object):
         elif cmd==b'\x03':
             self.set_ax_position(2, val)
         elif cmd==b'\x04':
+            print("Response:", cmd, val)
             self.set_ax_position(0, val)
         elif cmd==b'\x05':
             self.set_ax_position(1, val)
@@ -434,18 +475,18 @@ class Ui_MainWindow(object):
                 self.worker.finished_sig.connect(self.handle_finish)
                 self.worker.update_sig.connect(self.update_img)
                 self.measure_thread.start()
-            else:
-                self.destroy_plot()
-                self.init_plot()
-                self.measure_thread = QThread()
-                self.worker = TimeMeasureWorker(self)
-                self.worker.moveToThread(self.measure_thread)
-                self.measure_thread.started.connect(self.worker.run)
-                self.worker.finished_sig.connect(self.measure_thread.quit)
-                self.worker.finished_sig.connect(self.worker.deleteLater)
-                self.measure_thread.finished.connect(self.measure_thread.deleteLater)
-                self.worker.finished_sig.connect(self.handle_finish)
-                self.measure_thread.start()
+            # else:
+            #     self.destroy_plot()
+            #     self.init_plot()
+            #     self.measure_thread = QThread()
+            #     self.worker = TimeMeasureWorker(self)
+            #     self.worker.moveToThread(self.measure_thread)
+            #     self.measure_thread.started.connect(self.worker.run)
+            #     self.worker.finished_sig.connect(self.measure_thread.quit)
+            #     self.worker.finished_sig.connect(self.worker.deleteLater)
+            #     self.measure_thread.finished.connect(self.measure_thread.deleteLater)
+            #     self.worker.finished_sig.connect(self.handle_finish)
+            #     self.measure_thread.start()
 
     def init_plot(self):
         self.plot_item = pg.PlotItem()
@@ -529,6 +570,8 @@ class Ui_MainWindow(object):
 
     def setupUi(self, MainWindow: QtWidgets.QMainWindow):
         
+        self.path = str(pathlib.Path(__file__).parent.resolve())
+        # print(type(self.path))
 
         MainWindow.resize(802, 680)
         self.main_widget = QtWidgets.QWidget(MainWindow)
@@ -639,7 +682,7 @@ class Ui_MainWindow(object):
         self.home_lbl.setMaximumSize(QtCore.QSize(35, 35))
         self.home_lbl.setText("")
         self.home_lbl.setTextFormat(QtCore.Qt.MarkdownText)
-        self.home_lbl.setPixmap(QtGui.QPixmap("assets/home.png"))
+        self.home_lbl.setPixmap(QtGui.QPixmap(self.path+"/assets/home.png"))
         self.home_lbl.setScaledContents(True)
 
         self.home_x_btn = QtWidgets.QPushButton(self.control_gb)
@@ -678,7 +721,7 @@ class Ui_MainWindow(object):
         self.zero_lbl.setMaximumSize(QtCore.QSize(35, 35))
         self.zero_lbl.setText("")
         self.zero_lbl.setTextFormat(QtCore.Qt.MarkdownText)
-        self.zero_lbl.setPixmap(QtGui.QPixmap("assets/download.png"))
+        self.zero_lbl.setPixmap(QtGui.QPixmap(self.path+"/assets/download.png"))
         self.zero_lbl.setScaledContents(True)
 
 
@@ -926,7 +969,7 @@ class Ui_MainWindow(object):
         self.center_btn = QtWidgets.QPushButton(self.measure_gb)
         self.center_btn.setText("")
         icon = QtGui.QIcon()
-        icon.addPixmap(QtGui.QPixmap("assets/center_img.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon.addPixmap(QtGui.QPixmap(self.path+"/assets/center_img.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.center_btn.setIcon(icon)
         self.center_btn.setIconSize(QtCore.QSize(45, 45))
         self.center_btn.setMaximumWidth(55)
@@ -936,7 +979,7 @@ class Ui_MainWindow(object):
         self.corner_btn = QtWidgets.QPushButton(self.measure_gb)
         self.corner_btn.setText("")
         icon1 = QtGui.QIcon()
-        icon1.addPixmap(QtGui.QPixmap("assets/corner_img.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon1.addPixmap(QtGui.QPixmap(self.path+"/assets/corner_img.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.corner_btn.setIcon(icon1)
         self.corner_btn.setIconSize(QtCore.QSize(45, 45))
         self.corner_btn.setMaximumWidth(55)
