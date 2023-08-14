@@ -17,12 +17,12 @@ Adafruit_ADS1115 adc;
 #define ylim 10
 #define zlim 11
 
-#define x_step_per_mm 10.
-#define y_step_per_mm 10.
+#define x_step_per_mm 10./2.
+#define y_step_per_mm 10./2.
 #define z_step_per_mm 200/8.
 
 #define x_max_vel 100.
-#define x_acc 60.
+#define x_acc 90.
 
 #define y_max_vel 1500.
 #define y_acc 650.
@@ -263,6 +263,7 @@ void loop() {
         val += readAdc_mT();
       }
       val/=5;
+      Serial.write(0x0b);
       write_float(val);
     }break;
     default:

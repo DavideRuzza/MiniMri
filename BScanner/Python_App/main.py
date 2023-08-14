@@ -154,6 +154,115 @@ class SpaceMeasureWorker(QObject):
         self.finished_sig.emit()
         self.update_sig.emit()
 
+
+class SpaceMeasureWorker_Best(QObject):
+
+    finished_sig = pyqtSignal()
+    stopped_sig = pyqtSignal()
+    update_sig = pyqtSignal()
+
+    def __init__(self, main_win):
+        super(SpaceMeasureWorker_Best, self).__init__()
+        self.mw : Ui_MainWindow = main_win
+
+    def run(self):
+        
+        print("start measure")
+
+        
+        x_size = self.mw.x_size_sb.value()
+        y_size = self.mw.y_size_sb.value()
+        z_size = self.mw.z_size_sb.value()
+        print("1")
+        step_size = float(self.mw.step_cb.currentText())
+
+        x_steps = np.arange(0, x_size, step_size)+self.mw.x_pos
+        y_steps = np.arange(0, y_size, step_size)+self.mw.y_pos
+        z_steps = np.arange(0, z_size, step_size)+self.mw.z_pos
+
+        start_pos = [self.mw.x_pos, self.mw.y_pos, self.mw.z_pos]
+
+        print("2")
+        if self.mw.origin_var==0:
+            x_steps-=(x_size-step_size)/2
+            y_steps-=(y_size-step_size)/2
+            z_steps-=(z_size-step_size)/2
+
+        print("3")
+        if self.mw.plane_var == 0:
+            z_steps= [self.mw.z_pos]
+        elif self.mw.plane_var == 1:
+            y_steps = [self.mw.y_pos]
+        else:
+            x_steps = [self.mw.x_pos]
+
+        img_arr = np.zeros((len(x_steps), len(y_steps), len(z_steps)))
+        print(x_steps)
+        print(y_steps)
+        print(z_steps)
+        print(start_pos)
+        
+
+        for k, z in enumerate(z_steps):
+            with self.mw.lock:
+                if self.mw.stop_measure:
+                    self.mw.stop_measure = False
+                    print("end z")
+                    break
+
+            if self.mw.plane_var != 0:
+                self.mw.operation(self.mw.MOVE_TO_Z, z)  
+                self.mw.thread_ev.wait()
+
+            for j, y in enumerate(y_steps):
+                with self.mw.lock:
+                    if self.mw.stop_measure:
+                        print("end y")
+                        break
+                
+                if self.mw.plane_var != 1:
+                    self.mw.operation(self.mw.MOVE_TO_Y, y)
+                    self.mw.thread_ev.wait()
+
+                for i, x in enumerate(x_steps):
+
+                    with self.mw.lock:
+                        if self.mw.stop_measure:
+                            print("end x")
+                            break
+
+                    if self.mw.plane_var != 2:
+                        self.mw.operation(self.mw.MOVE_TO_X, x)
+                        self.mw.thread_ev.wait()
+
+                    self.mw.operation(self.mw.VALUE, self.mw.NULL)
+                    self.mw.thread_ev.wait()
+
+                    img_arr[i, j, k] = self.mw.curr_value
+
+                    if self.mw.plane_var == 0:
+                        self.mw.img_arr = img_arr[:,:,0]
+                    elif self.mw.plane_var == 1:
+                        self.mw.img_arr = img_arr[:,0,:]
+                    elif self.mw.plane_var == 2:
+                        self.mw.img_arr = img_arr[0,:,:]
+
+                    self.update_sig.emit()
+
+        self.mw.operation(self.mw.MOVE_TO_X, start_pos[0])
+        self.mw.thread_ev.wait()
+        self.mw.operation(self.mw.MOVE_TO_Y, start_pos[1])
+        self.mw.thread_ev.wait()
+        self.mw.operation(self.mw.MOVE_TO_Z, start_pos[2])
+        self.mw.thread_ev.wait()
+        
+        print("end measure")
+
+
+        self.finished_sig.emit()
+        self.update_sig.emit()
+
+
 class TimeMeasureWorker(QObject):
 
     finished_sig = pyqtSignal()
@@ -257,6 +366,8 @@ class Ui_MainWindow(object):
                 sleep(2)
                 self.operation(b'\xff', self.NULL)
                 self.thread_ev.wait()
+                self.operation(b'\xff', self.NULL)
+                self.thread_ev.wait()
 
             except serial.SerialException:
                 self.report(f"Could not open port {self.COM}")
@@ -302,7 +413,6 @@ class Ui_MainWindow(object):
         val = struct.unpack('>f', val)[0]
 
         print("Response:", a, cmd, val)
-        print(cmd, val)
         if cmd==b'\x01':
             self.set_ax_position(0, val)
         elif cmd==b'\x02':
@@ -310,7 +420,6 @@ class Ui_MainWindow(object):
         elif cmd==b'\x03':
             self.set_ax_position(2, val)
         elif cmd==b'\x04':
-            print("Response:", cmd, val)
             self.set_ax_position(0, val)
         elif cmd==b'\x05':
             self.set_ax_position(1, val)
@@ -323,6 +432,7 @@ class Ui_MainWindow(object):
         elif cmd==b'\x09':
             self.set_ax_position(2, val)
         elif cmd==b'\x0b':
+            # print("MEasured_field")
             self.val_le.setText(f"{val:.2f}")
             self.curr_value = val
         self.thread_ev.set()
@@ -330,89 +440,7 @@ class Ui_MainWindow(object):
     def move_to_point(self, x, y, z):
         self.operation(self.MOVE_TO_X, x)
         self.operation(self.MOVE_TO_Y, y)
-        self.operation(self.MOVE_TO_Z, z)
-    
-    def measure(self):
-        start_pos = np.array([self.x_pos, self.y_pos, self.z_pos])
-        add_vector = np.zeros(3)
-
-        x_size = self.x_size_sb.value()
-        y_size = self.y_size_sb.value()
-        z_size = self.z_size_sb.value()
-
-        x_steps = np.arange(0, x_size, float(self.step_cb.currentText())) if x_size > 0 else np.array([self.x_pos])
-        y_steps = np.arange(0, y_size, float(self.step_cb.currentText())) if y_size > 0 else np.array([self.y_pos])
-        z_steps = np.arange(0, z_size, float(self.step_cb.currentText())) if z_size > 0 else np.array([self.z_pos])
-
-        if self.origin_var==0:
-            if self.plane_var!=3:
-                self.operation(self.MOVE_TO_X, start_pos[0]-x_size/2)
-            if self.plane_var!=2:
-                self.operation(self.MOVE_TO_Y, start_pos[1]-y_size/2)
-            if self.plane_var!=1:
-                self.operation(self.MOVE_TO_Z, start_pos[2]-z_size/2)
-            
-            x_steps-=x_size/2
-            y_steps-=y_size/2
-            z_steps-=z_size/2
-
-        if self.plane_var == 0:
-            z_steps=np.array([start_pos[0]])
-        elif self.plane_var == 1:
-            y_steps=np.array([start_pos[1]])
-        elif self.plane_var == 2:
-            x_steps=np.array([start_pos[2]])
-        
-        self.img_arr = np.zeros((len(x_steps), len(y_steps), len(z_steps)))
-        
-        print(x_steps)
-        print(y_steps)
-        print(z_steps)
-    
-        # self.plot_item.clear()
-        # self.plot_item.addItem(self.img_item)
-        
-        x_inv = False
-        y_inv = False
-        for k, z in enumerate(z_steps):
-            if self.stop_measure:
-                self.stop_measure = False
-                print("end z")
-                break
-            for j, y in enumerate(y_steps):
-                if self.stop_measure:
-                    print("end y")
-                    break
-                for i, x in enumerate(x_steps):
-
-                    if self.stop_measure:
-                        print("end x")
-                        break
-
-                    self.operation(self.VALUE, self.NULL)
-
-                    ii = len(x_steps)-i-1 if x_inv else i
-                    jj = len(y_steps)-j-1 if y_inv else j
-
-                    if self.plane_var == 0:
-                        self.img_arr = self.img_arr[:,:,0]
-                    elif self.plane_var == 1:
-                        self.img_arr = self.img_arr[:,0,:]
-                    elif self.plane_var == 2:
-                        self.img_arr = self.img_arr[0,:,:]
-    
-                    self.img_arr[ii, jj, k] = self.curr_value
-
-                    self.img_item.setImage(self.img_arr)
-                    self.bar.setLevels((np.amin(self.img_arr), np.amax(self.img_arr)))
-                    # HELP: https://stackoverflow.com/questions/18080170/what-is-the-easiest-way-to-achieve-realtime-plotting-in-pyqtgraph
-                    QtWidgets.QApplication.processEvents()
-
-                x_steps = x_steps[::-1]
-                x_inv = not x_inv
-
-            y_steps = y_steps[::-1]
-            y_inv = not y_inv    
+        self.operation(self.MOVE_TO_Z, z)  
 
     def update_img(self):
         self.img_item.setImage(self.img_arr)
@@ -466,7 +494,7 @@ class Ui_MainWindow(object):
                 self.destroy_image()
                 self.init_image()
                 self.measure_thread = QThread()
-                self.worker = SpaceMeasureWorker(self)
+                self.worker = SpaceMeasureWorker_Best(self)
                 self.worker.moveToThread(self.measure_thread)
                 self.measure_thread.started.connect(self.worker.run)
                 self.worker.finished_sig.connect(self.measure_thread.quit)
@@ -475,18 +503,18 @@ class Ui_MainWindow(object):
                 self.worker.finished_sig.connect(self.handle_finish)
                 self.worker.update_sig.connect(self.update_img)
                 self.measure_thread.start()
-            # else:
-            #     self.destroy_plot()
-            #     self.init_plot()
-            #     self.measure_thread = QThread()
-            #     self.worker = TimeMeasureWorker(self)
-            #     self.worker.moveToThread(self.measure_thread)
-            #     self.measure_thread.started.connect(self.worker.run)
-            #     self.worker.finished_sig.connect(self.measure_thread.quit)
-            #     self.worker.finished_sig.connect(self.worker.deleteLater)
-            #     self.measure_thread.finished.connect(self.measure_thread.deleteLater)
-            #     self.worker.finished_sig.connect(self.handle_finish)
-            #     self.measure_thread.start()
+            else:
+                self.destroy_plot()
+                self.init_plot()
+                self.measure_thread = QThread()
+                self.worker = TimeMeasureWorker(self)
+                self.worker.moveToThread(self.measure_thread)
+                self.measure_thread.started.connect(self.worker.run)
+                self.worker.finished_sig.connect(self.measure_thread.quit)
+                self.worker.finished_sig.connect(self.worker.deleteLater)
+                self.measure_thread.finished.connect(self.measure_thread.deleteLater)
+                self.worker.finished_sig.connect(self.handle_finish)
+                self.measure_thread.start()
 
     def init_plot(self):
         self.plot_item = pg.PlotItem()
