@@ -61,7 +61,7 @@ void setup() {
     Serial.println("Failed to initialize ADS.");
     while (1);
   }
-  adc.setGain(GAIN_TWO);
+  adc.setGain(GAIN_TWO); // 2x gain   +/- 2.048V  0.0625mV
   
   pinMode(xlim, INPUT_PULLUP);
   pinMode(ylim, INPUT_PULLUP);
@@ -75,67 +75,8 @@ void setup() {
   z_step.setAcceleration(z_acc);
   digitalWrite(EN,HIGH);
 
-  Serial.write(0xff);
+  // Serial.write(0xff);
 }
-
-void home_step(AccelStepper &stepper, int dir, int pin, bool std_val, float max_vel){
-  stepper.setMaxSpeed(0.8*max_vel);
-  while(digitalRead(pin)==std_val){
-    stepper.move(-1*dir);
-    stepper.run();
-  }
-}
-
-void home_stepper(AccelStepper &stepper, int dir, int pin, bool std_val, float step_per_mm, float max_vel, float acc, float &pos){
-  stepper.setCurrentPosition(0);
-  long home_pos = -1*dir;
-  stepper.setMaxSpeed(max_vel*0.8);
-  digitalWrite(EN, LOW);
-  while(digitalRead(pin)==std_val){
-    stepper.moveTo(home_pos);
-    stepper.run();
-    home_pos=home_pos-dir;
-  }
-
-  stepper.setCurrentPosition(0);
-
-  home_pos = -dir;
-  
-  while(digitalRead(pin)!=std_val){
-    //Serial.println(digitalRead(pin));
-    stepper.moveTo(home_pos);
-    stepper.run();
-    home_pos=home_pos+dir;
-  }
-  digitalWrite(EN, HIGH);
-
-  stepper.setCurrentPosition(0);
-  
-  stepper.setMaxSpeed(max_vel);
-  pos = 0;
-}
-
-float readAdc_V(){
-
-  float volts = adc.computeVolts(adc.readADC_Differential_2_3());
-  return volts; //volts to milliTesla
-}
-
-float readAdc_mT(){
-
-  float volts = adc.computeVolts(adc.readADC_Differential_2_3());
-  return volts*72.7; //volts to milliTesla
-}
-
-void write_float(float val){
-  long val_int = * (long *) &val;
-  Serial.write(val_int>>24&0xff);
-  Serial.write(val_int>>16&0xff);
-  Serial.write(val_int>>8&0xff);
-  Serial.write(val_int&0xff);
-  Serial.write(0x00);
-}
-
 
 void loop() {
 
@@ -167,9 +108,9 @@ void loop() {
     {
       float x_mm = value;
       x_step.move(x_mm*x_step_per_mm*xmul*xdi);
-      digitalWrite(EN, LOW);
+      //digitalWrite(EN, LOW);
       while(x_step.run()){};
-      digitalWrite(EN, HIGH);
+      //digitalWrite(EN, HIGH);
       x_pos+=x_mm;
       Serial.write(0x01);
       write_float(x_pos);
@@ -179,9 +120,9 @@ void loop() {
     {
       float y_mm = value;
       y_step.move(y_mm*y_step_per_mm*ymul*ydi);
-      digitalWrite(EN, LOW);
+      //digitalWrite(EN, LOW);
       while(y_step.run()){};
-      digitalWrite(EN, HIGH);
+      //digitalWrite(EN, HIGH);
       y_pos+=y_mm;
       Serial.write(0x02);
       write_float(y_pos);
@@ -191,9 +132,9 @@ void loop() {
     {
       float z_mm = value;
       z_step.move(z_mm*z_step_per_mm*zmul*zdi);
-      digitalWrite(EN, LOW);
+      //digitalWrite(EN, LOW);
       while(z_step.run()){};
-      digitalWrite(EN, HIGH);
+      //digitalWrite(EN, HIGH);
       z_pos+=z_mm;
       Serial.write(0x03);
       write_float(z_pos);
@@ -223,9 +164,9 @@ void loop() {
     {
       float x_mm = (value-x_pos);
       x_step.move(x_mm*x_step_per_mm*xmul*xdi);
-      digitalWrite(EN, LOW);
+      //digitalWrite(EN, LOW);
       while(x_step.run()){};
-      digitalWrite(EN, HIGH);
+      //digitalWrite(EN, HIGH);
       x_pos+=x_mm;
       Serial.write(0x07);
       write_float(x_pos);
@@ -235,9 +176,9 @@ void loop() {
     {
       float y_mm = (value-y_pos);
       y_step.move(y_mm*y_step_per_mm*ymul*ydi);
-      digitalWrite(EN, LOW);
+      //digitalWrite(EN, LOW);
       while(y_step.run()){};
-      digitalWrite(EN, HIGH);
+      //digitalWrite(EN, HIGH);
       y_pos+=y_mm;
       Serial.write(0x08);
       write_float(y_pos);
@@ -247,9 +188,9 @@ void loop() {
     {
       float z_mm = (value-z_pos);
       z_step.move(z_mm*z_step_per_mm*zmul*zdi);
-      digitalWrite(EN, LOW);
+      //digitalWrite(EN, LOW);
       while(z_step.run()){};
-      digitalWrite(EN, HIGH);
+      //digitalWrite(EN, HIGH);
       z_pos+=z_mm;
       Serial.write(0x09);
       write_float(z_pos);
@@ -260,11 +201,45 @@ void loop() {
     {
       float val = 0;
       for (int i = 0; i<5; i++){
-        val += readAdc_mT();
+        val += readAdc_V();
       }
       val/=5;
       Serial.write(0x0b);
       write_float(val);
+    }break;
+
+  case 0x0c: //Set adc scaler
+    {
+      if ((int)value==1)
+        adc.setGain(GAIN_TWOTHIRDS);  // 2/3x gain +/- 6.144V  0.1875mV (default)
+      else if ((int)value==2)
+        adc.setGain(GAIN_ONE);        // 1x gain   +/- 4.096V  0.125mV
+      else if ((int)value==3)
+        adc.setGain(GAIN_TWO);        // 2x gain   +/- 2.048V  0.0625mV
+      else if ((int)value==4)
+        adc.setGain(GAIN_FOUR);       // 4x gain   +/- 1.024V  0.03125mV
+      else if ((int)value==5)
+        adc.setGain(GAIN_EIGHT);      // 8x gain   +/- 0.512V  0.015625mV
+      else
+        adc.setGain(GAIN_SIXTEEN);    // 16x gain  +/- 0.256V  0.0078125mV
+      
+      Serial.write(0x0c);
+      write_float(value);
+
+    }break;
+
+    case 0x0d: // enable motors
+      {
+        digitalWrite(EN, LOW);
+        Serial.write(0x0d);
+        write_float(0.0);
+    }break;
+
+    case 0x0e: // disable motors
+      {
+        digitalWrite(EN,HIGH);
+        Serial.write(0x0e);
+        write_float(0.0);
     }break;
     default:
     {
@@ -273,51 +248,53 @@ void loop() {
     }break;
   }
 }
-    /*
-    if (cmd == 'M'){ // moving
-      if (axis == 'X') {
-        x_step.move(distance*x_step_per_mm*xmul*xdi);
-        digitalWrite(EN, LOW);
-        while(x_step.run()){};
-        digitalWrite(EN, HIGH);
-      } else if (axis=='Y') {
-        y_step.move(distance*y_step_per_mm*ymul*ydi);
-        digitalWrite(EN, LOW);
-        while(y_step.run()){};
-        digitalWrite(EN, HIGH);
-      } else if (axis=='Z') {
-        z_step.move(distance*z_step_per_mm*zmul*ydi);
-        digitalWrite(EN, LOW);
-        while(z_step.run()){};
-        digitalWrite(EN, HIGH);
-      }
-      Serial.write(\x01);
-    }
-    
-    else if (cmd == 'H') {// homing
-      
-      if (axis == 'X') {
-          home_stepper(x_step, xdi, xlim, 1, x_step_per_mm, x_max_vel, x_acc, x_pos);
-        } else if (axis == 'Y') {
-          home_stepper(y_step, ydi, ylim, 1, y_step_per_mm, y_max_vel, y_acc, y_pos);
-        } else if (axis == 'Z') {
-          home_stepper(z_step, zdi, zlim, 1, z_step_per_mm, z_max_vel, z_acc, z_pos);
-      }
-      Serial.println(cmd);
-    }
-    else if (cmd == 'R'){
-      float val = 0;
-      for (int i = 0; i<5; i++){
-        val += readAdcmT();
-      }
-      val/=2;
-//      Serial.println(val);
-      write_float(val);
-//      Serial.println();
-    }
-    else {
-      
-    }
-    
+
+void home_stepper(AccelStepper &stepper, int dir, int pin, bool std_val, float step_per_mm, float max_vel, float acc, float &pos){
+  stepper.setCurrentPosition(0);
+  long home_pos = -1*dir;
+  stepper.setMaxSpeed(max_vel*0.8);
+  //digitalWrite(EN, LOW);
+  while(digitalRead(pin)==std_val){
+    stepper.moveTo(home_pos);
+    stepper.run();
+    home_pos=home_pos-dir;
   }
-  */
+
+  stepper.setCurrentPosition(0);
+
+  home_pos = -dir;
+  
+  while(digitalRead(pin)!=std_val){
+    //Serial.println(digitalRead(pin));
+    stepper.moveTo(home_pos);
+    stepper.run();
+    home_pos=home_pos+dir;
+  }
+  //digitalWrite(EN, HIGH);
+
+  stepper.setCurrentPosition(0);
+  
+  stepper.setMaxSpeed(max_vel);
+  pos = 0;
+}
+
+float readAdc_V(){
+
+  float volts = adc.computeVolts(adc.readADC_Differential_2_3());
+  return volts; //volts to milliTesla
+}
+
+float readAdc_mT(){
+
+  float volts = adc.computeVolts(adc.readADC_Differential_2_3());
+  return volts*72.7; //volts to milliTesla
+}
+
+void write_float(float val){
+  long val_int = * (long *) &val;
+  Serial.write(val_int>>24&0xff);
+  Serial.write(val_int>>16&0xff);
+  Serial.write(val_int>>8&0xff);
+  Serial.write(val_int&0xff);
+  //Serial.write(0x00);
+}

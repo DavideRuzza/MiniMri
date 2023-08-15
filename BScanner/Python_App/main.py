@@ -61,22 +61,22 @@ class SpaceMeasureWorker(QObject):
             if self.mw.plane_var == 0:
                 z_steps= [self.mw.z_pos]
                 self.mw.operation(self.mw.MOVE_X, -x_size/2) #print("move x") 
-                self.mw.thread_ev.wait()
+                #self.mw.thread_ev.wait()
                 self.mw.operation(self.mw.MOVE_Y, -y_size/2) #print("move y") 
-                self.mw.thread_ev.wait()
+                #self.mw.thread_ev.wait()
 
             elif self.mw.plane_var == 1:
                 y_steps = [self.mw.y_pos]
                 self.mw.operation(self.mw.MOVE_X, -x_size/2) #print("move x") 
-                self.mw.thread_ev.wait()
+                #self.mw.thread_ev.wait()
                 self.mw.operation(self.mw.MOVE_Z, -z_size/2) #print("move z") 
-                self.mw.thread_ev.wait()
+                #self.mw.thread_ev.wait()
             else:
                 x_steps = [self.mw.x_pos]
                 self.mw.operation(self.mw.MOVE_Y, -y_size/2) #print("move x") 
-                self.mw.thread_ev.wait()
+                #self.mw.thread_ev.wait()
                 self.mw.operation(self.mw.MOVE_Z, -z_size/2) #print("move z") 
-                self.mw.thread_ev.wait()
+                #self.mw.thread_ev.wait()
         else:
             if self.mw.plane_var == 0:
                 z_steps= [self.mw.z_pos]
@@ -96,7 +96,7 @@ class SpaceMeasureWorker(QObject):
 
             if self.mw.plane_var != 0:
                 self.mw.operation(self.mw.MOVE_Z, step_size)  
-                self.mw.thread_ev.wait()
+                #self.mw.thread_ev.wait()
 
             for j in range(len(y_steps)):
                 with self.mw.lock:
@@ -106,7 +106,7 @@ class SpaceMeasureWorker(QObject):
                 
                 if self.mw.plane_var != 1:
                     self.mw.operation(self.mw.MOVE_Y, step_size)
-                    self.mw.thread_ev.wait()
+                    #self.mw.thread_ev.wait()
 
                 for i in range(len(x_steps)):
 
@@ -117,10 +117,10 @@ class SpaceMeasureWorker(QObject):
 
                     if self.mw.plane_var != 2:
                         self.mw.operation(self.mw.MOVE_X, step_size)
-                        self.mw.thread_ev.wait()
+                        #self.mw.thread_ev.wait()
 
                     self.mw.operation(self.mw.VALUE, self.mw.NULL)
-                    self.mw.thread_ev.wait()
+                    #self.mw.thread_ev.wait()
 
                     img_arr[i, j, k] = self.mw.curr_value
 
@@ -135,18 +135,18 @@ class SpaceMeasureWorker(QObject):
 
                 if self.mw.plane_var != 2 and not self.mw.stop_measure:
                     self.mw.operation(self.mw.MOVE_X, -step_size*(len(x_steps)-1))
-                    self.mw.thread_ev.wait()
+                    #self.mw.thread_ev.wait()
             
             if self.mw.plane_var != 1 and not self.mw.stop_measure:
                 self.mw.operation(self.mw.MOVE_Y, -step_size*(len(y_steps)-1))
-                self.mw.thread_ev.wait()
+                #self.mw.thread_ev.wait()
 
         self.mw.operation(self.mw.MOVE_TO_X, start_pos[0])
-        self.mw.thread_ev.wait()
+        #self.mw.thread_ev.wait()
         self.mw.operation(self.mw.MOVE_TO_Y, start_pos[1])
-        self.mw.thread_ev.wait()
+        #self.mw.thread_ev.wait()
         self.mw.operation(self.mw.MOVE_TO_Z, start_pos[2])
-        self.mw.thread_ev.wait()
+        #self.mw.thread_ev.wait()
         
         print("end measure")
 
@@ -169,7 +169,7 @@ class SpaceMeasureWorker_Best(QObject):
         
         print("start measure")
 
-        
+        self.mw.operation(self.mw.ENABLE, self.mw.NULL)  
         x_size = self.mw.x_size_sb.value()
         y_size = self.mw.y_size_sb.value()
         z_size = self.mw.z_size_sb.value()
@@ -206,13 +206,12 @@ class SpaceMeasureWorker_Best(QObject):
         for k, z in enumerate(z_steps):
             with self.mw.lock:
                 if self.mw.stop_measure:
-                    self.mw.stop_measure = False
                     print("end z")
                     break
 
             if self.mw.plane_var != 0:
                 self.mw.operation(self.mw.MOVE_TO_Z, z)  
-                self.mw.thread_ev.wait()
+                #self.mw.thread_ev.wait()
 
             for j, y in enumerate(y_steps):
                 with self.mw.lock:
@@ -222,7 +221,7 @@ class SpaceMeasureWorker_Best(QObject):
                 
                 if self.mw.plane_var != 1:
                     self.mw.operation(self.mw.MOVE_TO_Y, y)
-                    self.mw.thread_ev.wait()
+                    #self.mw.thread_ev.wait()
 
                 for i, x in enumerate(x_steps):
 
@@ -233,10 +232,10 @@ class SpaceMeasureWorker_Best(QObject):
 
                     if self.mw.plane_var != 2:
                         self.mw.operation(self.mw.MOVE_TO_X, x)
-                        self.mw.thread_ev.wait()
+                        #self.mw.thread_ev.wait()
 
                     self.mw.operation(self.mw.VALUE, self.mw.NULL)
-                    self.mw.thread_ev.wait()
+                    #self.mw.thread_ev.wait()
 
                     img_arr[i, j, k] = self.mw.curr_value
 
@@ -250,17 +249,18 @@ class SpaceMeasureWorker_Best(QObject):
                     self.update_sig.emit()
 
         self.mw.operation(self.mw.MOVE_TO_X, start_pos[0])
-        self.mw.thread_ev.wait()
+        #self.mw.thread_ev.wait()
         self.mw.operation(self.mw.MOVE_TO_Y, start_pos[1])
-        self.mw.thread_ev.wait()
+        #self.mw.thread_ev.wait()
         self.mw.operation(self.mw.MOVE_TO_Z, start_pos[2])
-        self.mw.thread_ev.wait()
+        #self.mw.thread_ev.wait()
         
+        self.mw.operation(self.mw.DISABLE, self.mw.NULL)
         print("end measure")
-
-
-        self.finished_sig.emit()
+        
         self.update_sig.emit()
+        self.finished_sig.emit()
+        self.mw.stop_measure = False
 
 
 class TimeMeasureWorker(QObject):
@@ -284,20 +284,20 @@ class TimeMeasureWorker(QObject):
         for i, t in enumerate(t_steps):
             with self.mw.lock:
                 if self.mw.stop_measure:
-                    self.mw.stop_measure = False
                     print("end z")
                     break
             sleep(t_step)
             self.mw.operation(self.mw.VALUE, self.mw.NULL)
-            self.mw.thread_ev.wait()
+            #self.mw.thread_ev.wait()
 
             self.mw.plot_arr[i,0] = t
             self.mw.plot_arr[i,1] = self.mw.curr_value
             self.mw.update_plot(i)
 
         print("end measure")
-        self.finished_sig.emit()
         self.update_sig.emit()
+        self.finished_sig.emit()
+        self.mw.stop_measure = False
         
 class Ui_MainWindow(object):
 
@@ -365,9 +365,9 @@ class Ui_MainWindow(object):
                 self.port.reset_output_buffer()
                 sleep(2)
                 self.operation(b'\xff', self.NULL)
-                self.thread_ev.wait()
+                #self.thread_ev.wait()
                 self.operation(b'\xff', self.NULL)
-                self.thread_ev.wait()
+                #self.thread_ev.wait()
 
             except serial.SerialException:
                 self.report(f"Could not open port {self.COM}")
@@ -389,7 +389,9 @@ class Ui_MainWindow(object):
                 self.thread_ev.clear()
                 self.thread = threading.Thread(target=self.response_handle)
                 self.thread.start()
-                print("Operation",cmd)
+                # print("Operation",cmd)
+                self.thread_ev.wait()
+                # print("Operation", cmd, var)
         except Exception as e:
             print(e)
 
@@ -405,43 +407,44 @@ class Ui_MainWindow(object):
             self.z_pos = val
 
     def response_handle(self):
-        while (self.port.inWaiting()<6):
+        while (self.port.inWaiting()<5):
             pass
-        a = self.port.read(1)
+        # a = self.port.read(1)
         cmd = self.port.read(1)
         val = self.port.read(4)
+
+        # print("Response", cmd, val)
         val = struct.unpack('>f', val)[0]
 
-        print("Response:", a, cmd, val)
-        if cmd==b'\x01':
+        if cmd==b'\x01': # MOVE X 
             self.set_ax_position(0, val)
-        elif cmd==b'\x02':
+        elif cmd==b'\x02': # MOVE Y
             self.set_ax_position(1, val)
-        elif cmd==b'\x03':
+        elif cmd==b'\x03': # MOVE Z
             self.set_ax_position(2, val)
-        elif cmd==b'\x04':
+        elif cmd==b'\x04': # HOME X
             self.set_ax_position(0, val)
-        elif cmd==b'\x05':
+        elif cmd==b'\x05': # HOME Y
             self.set_ax_position(1, val)
-        elif cmd==b'\x06':
+        elif cmd==b'\x06': # HOME Z
             self.set_ax_position(2, val)
-        elif cmd==b'\x07':
+        elif cmd==b'\x07': # MOVE TO X
             self.set_ax_position(0, val)
-        elif cmd==b'\x08':
+        elif cmd==b'\x08': # MOVE TO Y
             self.set_ax_position(1, val)
-        elif cmd==b'\x09':
+        elif cmd==b'\x09': # MOVE TO Z
             self.set_ax_position(2, val)
-        elif cmd==b'\x0b':
-            # print("MEasured_field")
+        elif cmd==b'\x0b': # MEASURE
             self.val_le.setText(f"{val:.2f}")
             self.curr_value = val
+        elif cmd==b'\x0c': # SET ADC SCALE
+            pass
+        elif cmd==b'\x0d': # ENABLE
+            pass
+        elif cmd==b'\x0d': # DISABLE
+            pass
         self.thread_ev.set()
-     
-    def move_to_point(self, x, y, z):
-        self.operation(self.MOVE_TO_X, x)
-        self.operation(self.MOVE_TO_Y, y)
-        self.operation(self.MOVE_TO_Z, z)  
-
+    
     def update_img(self):
         self.img_item.setImage(self.img_arr)
         self.bar_item.setLevels((np.amin(self.img_arr), np.amax(self.img_arr)))
@@ -455,10 +458,11 @@ class Ui_MainWindow(object):
     def handle_finish(self):
         self.start_measure = False
         self.start_btn.setText("Start")
+        # self.adc_sett_cb.setDisabled(False)
         if self.measure_type==0:
-            np.savetxt("measure.txt", self.img_arr)
+            np.savetxt(self.path+"/measure.txt", self.img_arr)
         else:
-            np.savetxt("time_measure.txt", self.plot_arr)
+            np.savetxt(self.path+"time_measure.txt", self.plot_arr)
 
     def init_inputs(self):
         self.open_btn.setEnabled(False)
@@ -470,22 +474,34 @@ class Ui_MainWindow(object):
                 self.start_measure = False
                 with self.lock:
                     self.stop_measure = True
+                    # sleep(1)
                 self.start_btn.setText("Start")
+                
                 return
         else:
             self.start_measure = False
+            self.start_btn.setDisabled(True)
             with self.lock:
                 self.stop_measure = True
+                # sleep(1)
             self.start_btn.setText("Start")
+            self.start_btn.setDisabled(False)
+            # self.adc_sett_cb.setDisabled(False)
             return
+        
         if self.start_measure:
             self.start_measure = False
+            self.start_btn.setDisabled(True)
             with self.lock:
                 self.stop_measure = True
+                # sleep(1)
             self.start_btn.setText("Start")
+            self.start_btn.setDisabled(False)
+            # self.adc_sett_cb.setDisabled(False)
         else:
             self.start_measure = True
             self.start_btn.setText("Stop")
+            # self.adc_sett_cb.setDisabled(True)
             self.stop_measure = False
             
 
@@ -514,6 +530,7 @@ class Ui_MainWindow(object):
                 self.worker.finished_sig.connect(self.worker.deleteLater)
                 self.measure_thread.finished.connect(self.measure_thread.deleteLater)
                 self.worker.finished_sig.connect(self.handle_finish)
+                # # self.adc_sett_cb.setDisabled(True)
                 self.measure_thread.start()
 
     def init_plot(self):
@@ -555,6 +572,14 @@ class Ui_MainWindow(object):
 
     def radio_action(self, val):
         self.measure_type = val
+    
+    def move_operation_with_en(self, cmd, val):
+        self.operation(self.ENABLE, self.NULL)
+        self.operation(cmd, val)
+        self.operation(self.DISABLE, self.NULL)
+    
+    def adc_value_action(self, idx):
+        self.operation(self.ADC_SCALE, idx+1)
 
     def set_events(self):
         
@@ -569,25 +594,28 @@ class Ui_MainWindow(object):
         self.refresh_btn.clicked.connect(self.refresh_btn_action)
         self.open_btn.clicked.connect(self.open_btn_action)
 
-        self.home_x_btn.clicked.connect(lambda: self.operation(self.HOME_X, self.NULL))
-        self.home_y_btn.clicked.connect(lambda: self.operation(self.HOME_Y, self.NULL))
-        self.home_z_btn.clicked.connect(lambda: self.operation(self.HOME_Z, self.NULL))
+        self.home_x_btn.clicked.connect(lambda: self.move_operation_with_en(self.HOME_X, self.NULL))
+        self.home_y_btn.clicked.connect(lambda: self.move_operation_with_en(self.HOME_Y, self.NULL))
+        self.home_z_btn.clicked.connect(lambda: self.move_operation_with_en(self.HOME_Z, self.NULL))
 
-        self.zero_x_btn.clicked.connect(lambda: self.operation(self.MOVE_TO_X, 0.0))
-        self.zero_y_btn.clicked.connect(lambda: self.operation(self.MOVE_TO_Y, 0.0))
-        self.zero_z_btn.clicked.connect(lambda: self.operation(self.MOVE_TO_Z, 0.0))
-        self.move_x_r_btn.clicked.connect(lambda: self.operation(self.MOVE_X, float(self.move_cb.currentText())))
-        self.move_x_l_btn.clicked.connect(lambda: self.operation(self.MOVE_X, -float(self.move_cb.currentText())))
+        self.zero_x_btn.clicked.connect(lambda: self.move_operation_with_en(self.MOVE_TO_X, 0.0))
+        self.zero_y_btn.clicked.connect(lambda: self.move_operation_with_en(self.MOVE_TO_Y, 0.0))
+        self.zero_z_btn.clicked.connect(lambda: self.move_operation_with_en(self.MOVE_TO_Z, 0.0))
 
-        self.move_y_r_btn.clicked.connect(lambda: self.operation(self.MOVE_Y, float(self.move_cb.currentText())))
-        self.move_y_l_btn.clicked.connect(lambda: self.operation(self.MOVE_Y, -float(self.move_cb.currentText())))
+        self.move_x_r_btn.clicked.connect(lambda: self.move_operation_with_en(self.MOVE_X, float(self.move_cb.currentText())))
+        self.move_x_l_btn.clicked.connect(lambda: self.move_operation_with_en(self.MOVE_X, -float(self.move_cb.currentText())))
 
-        self.move_z_r_btn.clicked.connect(lambda: self.operation(self.MOVE_Z, float(self.move_cb.currentText())))
-        self.move_z_l_btn.clicked.connect(lambda: self.operation(self.MOVE_Z, -float(self.move_cb.currentText())))
+        self.move_y_r_btn.clicked.connect(lambda: self.move_operation_with_en(self.MOVE_Y, float(self.move_cb.currentText())))
+        self.move_y_l_btn.clicked.connect(lambda: self.move_operation_with_en(self.MOVE_Y, -float(self.move_cb.currentText())))
+
+        self.move_z_r_btn.clicked.connect(lambda: self.move_operation_with_en(self.MOVE_Z, float(self.move_cb.currentText())))
+        self.move_z_l_btn.clicked.connect(lambda: self.move_operation_with_en(self.MOVE_Z, -float(self.move_cb.currentText())))
 
         self.val_btn.clicked.connect(lambda: self.operation(self.VALUE, self.NULL))
 
         self.start_btn.clicked.connect(self.start_btn_action)
+
+        self.adc_sett_cb.currentIndexChanged.connect(self.adc_value_action)
 
         self.space_mes_rb.toggled.connect(lambda: self.radio_action(0))
         self.time_mes_rb.toggled.connect(lambda: self.radio_action(1))
@@ -635,6 +663,9 @@ class Ui_MainWindow(object):
 
 
         self.VALUE = b'\x0b'
+        self.ADC_SCALE = b'\x0c'
+        self.ENABLE = b'\x0d'
+        self.DISABLE = b'\x0e'
         self.NULL = 0.0
 
         self.PORT_PID = 66 
@@ -1106,11 +1137,36 @@ class Ui_MainWindow(object):
         self.z_pos_lbl = QtWidgets.QLabel(self.measure_gb)
         self.z_pos_lbl.setText("Z Pos: ...")
         
-
         self.pos_layout.addWidget(self.x_pos_lbl)
         self.pos_layout.addWidget(self.y_pos_lbl)
         self.pos_layout.addWidget(self.z_pos_lbl)
         
+        # ------------------------------adc setting
+        self.line_6 = QtWidgets.QFrame(self.measure_gb)
+        self.line_6.setFrameShape(QtWidgets.QFrame.VLine)
+        self.line_6.setFrameShadow(QtWidgets.QFrame.Sunken)
+        self.adc_sett_ly = QtWidgets.QVBoxLayout()
+        self.adc_sett_lbl = QtWidgets.QLabel(self.measure_gb)
+
+        font = QtGui.QFont()
+        font.setPointSize(11)
+
+        self.adc_sett_lbl.setFont(font)
+        self.adc_sett_lbl.setText("ADC Scale")
+
+        self.adc_sett_cb = QtWidgets.QComboBox(self.measure_gb)
+        self.adc_sett_cb.setFont(font)
+        self.adc_sett_cb.addItem("+- 6V")
+        self.adc_sett_cb.addItem("+- 4V")
+        self.adc_sett_cb.addItem("+- 2V")
+        self.adc_sett_cb.addItem("+- 1V")
+        self.adc_sett_cb.addItem("+- 0.5V")
+        self.adc_sett_cb.addItem("+- 0.25V")
+        self.adc_sett_cb.setMinimumWidth(70)
+        self.adc_sett_cb.setCurrentIndex(2)
+        self.adc_sett_ly.addWidget(self.adc_sett_lbl)
+        self.adc_sett_ly.addWidget(self.adc_sett_cb)
+
 
         self.measure_ly.addLayout(self.step_ly, 0, 0, 1, 1)
         self.measure_ly.addLayout(self.time_step_ly, 1, 0, 1, 1)
@@ -1130,6 +1186,9 @@ class Ui_MainWindow(object):
         self.measure_ly.addLayout(self.value_ly, 1, 7, 2, 2)
         self.measure_ly.addLayout(self.pos_layout, 3, 7, 2, 2)
         self.measure_ly.addWidget(self.start_btn, 0, 8, 1, 1)
+
+        self.measure_ly.addWidget(self.line_6, 0, 9, 6, 1)
+        self.measure_ly.addLayout(self.adc_sett_ly, 0, 10, 1, 1)
 
         self.main_layout.addWidget(self.measure_gb, 2, 0, 1, 3)
 
