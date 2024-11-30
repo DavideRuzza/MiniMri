@@ -632,6 +632,7 @@ class Ui_MainWindow(object):
         MainWindow.resize(802, 680)
         self.main_widget = QtWidgets.QWidget(MainWindow)
         self.main_layout = QtWidgets.QGridLayout(self.main_widget)
+        MainWindow.setWindowTitle("MainWindow")
 
         self.connected = False
         self.port: serial.Serial = None 
@@ -690,27 +691,32 @@ class Ui_MainWindow(object):
         self.connection_gb = QtWidgets.QGroupBox(self.main_widget)
         self.connection_gb.setMaximumHeight(100)
         self.connection_gb.setFont(font)
+        self.connection_gb.setTitle("Connection")
 
         font = QtGui.QFont()
         font.setPointSize(11)
         self.port_lbl = QtWidgets.QLabel(self.connection_gb)
-        self.port_lbl.setFont(font)
         self.port_lbl.setAlignment(QtCore.Qt.AlignCenter)
+        self.port_lbl.setFont(font)
+        self.port_lbl.setText("Port:")
 
         self.port_cb = QtWidgets.QComboBox(self.connection_gb)
         self.port_cb.setFont(font)
         self.port_cb.setCurrentText("")
         self.port_cb.setMinimumHeight(30)
         self.port_cb.setMaximumWidth(100)
+        self.port_cb.setPlaceholderText("...")
 
         self.open_btn = QtWidgets.QPushButton(self.connection_gb)
-        self.open_btn.setFont(font)
         self.open_btn.setMinimumHeight(30)
+        self.open_btn.setFont(font)
+        self.open_btn.setText("Open")
 
         self.refresh_btn = QtWidgets.QPushButton(self.connection_gb)
         self.refresh_btn.setFont(font)
         self.refresh_btn.setMinimumHeight(30)
-
+        self.refresh_btn.setText("Refresh")
+        
 
         font = QtGui.QFont()
         font.setPointSize(10)
@@ -718,6 +724,7 @@ class Ui_MainWindow(object):
         self.control_gb = QtWidgets.QGroupBox(self.main_widget)
         self.control_gb.setMaximumWidth(220)
         self.control_gb.setFont(font)
+        self.control_gb.setTitle("Control")
 
         self.gridLayout = QtWidgets.QGridLayout(self.connection_gb)
         self.gridLayout.addWidget(self.port_lbl, 0, 0, 1, 1)
@@ -747,14 +754,18 @@ class Ui_MainWindow(object):
         self.home_x_btn = QtWidgets.QPushButton(self.control_gb)
         self.home_x_btn.setMinimumSize(QtCore.QSize(0, 44))
         self.home_x_btn.setFont(font)
+        self.home_x_btn.setText("X")
 
         self.home_y_btn = QtWidgets.QPushButton(self.control_gb)
         self.home_y_btn.setMinimumSize(QtCore.QSize(0, 45))
         self.home_y_btn.setFont(font)
+        self.home_y_btn.setText("Y")
 
         self.home_z_btn = QtWidgets.QPushButton(self.control_gb)
         self.home_z_btn.setMinimumSize(QtCore.QSize(0, 45))
         self.home_z_btn.setFont(font)
+        self.home_z_btn.setText("Z")
+        
 
         self.control_ly.addLayout(self.home_ly)
         self.hline1_2 = QtWidgets.QFrame(self.control_gb)
@@ -787,15 +798,18 @@ class Ui_MainWindow(object):
         self.zero_x_btn = QtWidgets.QPushButton(self.control_gb)
         self.zero_x_btn.setMinimumSize(QtCore.QSize(0, 44))
         self.zero_x_btn.setFont(font)
-
+        self.zero_x_btn.setText("X")
 
         self.zero_y_btn = QtWidgets.QPushButton(self.control_gb)
         self.zero_y_btn.setMinimumSize(QtCore.QSize(0, 45))
         self.zero_y_btn.setFont(font)
+        self.zero_y_btn.setText("Y")
         
         self.zero_z_btn = QtWidgets.QPushButton(self.control_gb)
         self.zero_z_btn.setMinimumSize(QtCore.QSize(0, 45))
         self.zero_z_btn.setFont(font)
+        self.zero_z_btn.setText("Z")
+        
 
         self.control_ly.addLayout(self.zero_ly)
         self.hline1 = QtWidgets.QFrame(self.control_gb)
@@ -821,18 +835,23 @@ class Ui_MainWindow(object):
         self.move_ly = QtWidgets.QHBoxLayout()
         self.move_lbl = QtWidgets.QLabel(self.control_gb)
         self.move_lbl.setFont(font)
+        self.move_lbl.setText("Move (mm)")
 
         self.move_cb = QtWidgets.QComboBox(self.control_gb)
         self.move_cb.setFont(font)
-        self.move_cb.addItem("")
-        self.move_cb.addItem("")
-        self.move_cb.addItem("")
-        self.move_cb.addItem("")
-        self.move_cb.addItem("")
+        self.move_cb.addItem("0.1")
+        self.move_cb.addItem("0.5")
+        self.move_cb.addItem("1")
+        self.move_cb.addItem("2")
+        self.move_cb.addItem("5")
+        self.move_cb.addItem("10")
+        self.move_cb.addItem("50")
+        self.move_cb.setPlaceholderText("...")
+        self.move_cb.setCurrentText("0.5")
         self.move_ly.addWidget(self.move_lbl)
         self.move_ly.addWidget(self.move_cb)
         self.control_ly.addLayout(self.move_ly)
-
+        
         self.line = QtWidgets.QFrame(self.control_gb)
         self.line.setFrameShape(QtWidgets.QFrame.HLine)
         self.line.setFrameShadow(QtWidgets.QFrame.Sunken)
@@ -841,31 +860,42 @@ class Ui_MainWindow(object):
 
         self.x_move_lbl = QtWidgets.QLabel(self.control_gb)
         self.x_move_lbl.setMinimumSize(QtCore.QSize(35, 0))
-        self.x_move_lbl.setFont(font)
         self.x_move_lbl.setAlignment(QtCore.Qt.AlignCenter)
+        self.x_move_lbl.setFont(font)
+        self.x_move_lbl.setText("X")
 
         self.move_x_l_btn = QtWidgets.QPushButton(self.control_gb)
-        self.move_x_l_btn.setFont(btn_font)
         self.move_x_r_btn = QtWidgets.QPushButton(self.control_gb)
+        self.move_x_l_btn.setFont(btn_font)
         self.move_x_r_btn.setFont(btn_font)
+        self.move_x_l_btn.setText("<")
+        self.move_x_r_btn.setText(">")
+
 
         self.y_move_lbl = QtWidgets.QLabel(self.control_gb)
-        self.y_move_lbl.setFont(font)
         self.y_move_lbl.setAlignment(QtCore.Qt.AlignCenter)
+        self.y_move_lbl.setFont(font)
+        self.y_move_lbl.setText("Y")
 
         self.move_y_l_btn = QtWidgets.QPushButton(self.control_gb)
-        self.move_y_l_btn.setFont(btn_font)
         self.move_y_r_btn = QtWidgets.QPushButton(self.control_gb)
+        self.move_y_l_btn.setFont(btn_font)
         self.move_y_r_btn.setFont(btn_font)
+        self.move_y_l_btn.setText("<")
+        self.move_y_r_btn.setText(">")
+
 
         self.z_move_lbl = QtWidgets.QLabel(self.control_gb)
-        self.z_move_lbl.setFont(font)
         self.z_move_lbl.setAlignment(QtCore.Qt.AlignCenter)
+        self.z_move_lbl.setFont(font)
+        self.z_move_lbl.setText("Z")
 
         self.move_z_l_btn = QtWidgets.QPushButton(self.control_gb)
-        self.move_z_l_btn.setFont(btn_font)
         self.move_z_r_btn = QtWidgets.QPushButton(self.control_gb)
+        self.move_z_l_btn.setFont(btn_font)
         self.move_z_r_btn.setFont(btn_font)
+        self.move_z_l_btn.setText("<")
+        self.move_z_r_btn.setText(">")
         
         self.xyz_move_ly = QtWidgets.QGridLayout()
         self.xyz_move_ly.addWidget(self.x_move_lbl, 0, 0, 1, 1)
@@ -907,36 +937,38 @@ class Ui_MainWindow(object):
         font.setPointSize(10)
 
         self.measure_gb.setFont(font)
+        self.measure_gb.setTitle("Measure")
         self.measure_ly = QtWidgets.QGridLayout(self.measure_gb)
-
         # ----------- measure Step ly
-        self.step_ly = QtWidgets.QHBoxLayout()
-        self.step_lbl = QtWidgets.QLabel(self.measure_gb)
-
         font = QtGui.QFont()
         font.setPointSize(11)
-
+        
+        self.step_ly = QtWidgets.QHBoxLayout()
+        self.step_lbl = QtWidgets.QLabel(self.measure_gb)
         self.step_lbl.setFont(font)
+        self.step_lbl.setText("Step (mm)")
+
 
         self.step_cb = QtWidgets.QComboBox(self.measure_gb)
         self.step_cb.setFont(font)
+        self.step_cb.setPlaceholderText("...")
         self.step_cb.addItem("0.1")
+        self.step_cb.addItem("0.2")
         self.step_cb.addItem("0.5")
         self.step_cb.addItem("1")
+        self.step_cb.addItem("2")
         self.step_cb.addItem("5")
         self.step_cb.setMinimumWidth(70)
         self.step_ly.addWidget(self.step_lbl)
         self.step_ly.addWidget(self.step_cb)
+        
+        
 
         # ------------------------- time step
         self.time_step_ly = QtWidgets.QHBoxLayout()
         self.time_step_lbl = QtWidgets.QLabel(self.measure_gb)
         self.time_step_lbl.setText("T step (s)")
 
-        font = QtGui.QFont()
-        font.setPointSize(11)
-
-        self.step_lbl.setFont(font)
 
         self.time_step_cb = QtWidgets.QComboBox(self.measure_gb)
         self.time_step_cb.setFont(font)
@@ -944,6 +976,7 @@ class Ui_MainWindow(object):
         self.time_step_cb.addItem("0.5")
         self.time_step_cb.addItem("1")
         self.time_step_cb.addItem("5")
+        self.time_step_cb.setPlaceholderText("...")
         self.time_step_cb.setMinimumWidth(70)
 
         self.time_step_ly.addWidget(self.time_step_lbl)
@@ -956,9 +989,10 @@ class Ui_MainWindow(object):
         # -------------------------------------------------- CELL SIZE
         self.x_size_lbl = QtWidgets.QLabel(self.measure_gb)
         self.x_size_lbl.setMaximumWidth(50)
-        self.x_size_lbl.setFont(font)
         self.x_size_lbl.setAlignment(QtCore.Qt.AlignCenter)
-
+        self.x_size_lbl.setFont(font)
+        self.x_size_lbl.setText("X")
+        
         self.x_size_sb = QtWidgets.QDoubleSpinBox(self.measure_gb)
         self.x_size_sb.setFont(font)
         self.x_size_sb.setSingleStep(0.1)
@@ -966,9 +1000,10 @@ class Ui_MainWindow(object):
         self.x_size_sb.setStyleSheet("border:1px solid gray")
         
         self.y_size_lbl = QtWidgets.QLabel(self.measure_gb)
-        self.y_size_lbl.setFont(font)
         self.y_size_lbl.setAlignment(QtCore.Qt.AlignCenter)
-
+        self.y_size_lbl.setFont(font)
+        self.y_size_lbl.setText("Y")
+        
         self.y_size_sb = QtWidgets.QDoubleSpinBox(self.measure_gb)
         self.y_size_sb.setFont(font)
         self.y_size_sb.setSingleStep(0.1)
@@ -976,8 +1011,9 @@ class Ui_MainWindow(object):
         self.y_size_sb.setStyleSheet("border:1px solid gray")
 
         self.z_size_lbl = QtWidgets.QLabel(self.measure_gb)
-        self.z_size_lbl.setFont(font)
         self.z_size_lbl.setAlignment(QtCore.Qt.AlignCenter)
+        self.z_size_lbl.setFont(font)
+        self.z_size_lbl.setText("Z")
 
         self.z_size_sb = QtWidgets.QDoubleSpinBox(self.measure_gb)
         self.z_size_sb.setFont(font)
@@ -985,9 +1021,11 @@ class Ui_MainWindow(object):
         self.z_size_sb.setValue(10.)
         self.z_size_sb.setStyleSheet("border:1px solid gray")
 
-        self.cell_size_lbl = QtWidgets.QLabel(self.measure_gb)
 
+        self.cell_size_lbl = QtWidgets.QLabel(self.measure_gb)
         self.cell_size_lbl.setFont(font)
+        self.cell_size_lbl.setText("Cell Size (mm)")
+        
         
         self.cell_size_ly = QtWidgets.QGridLayout()
         self.cell_size_ly.addWidget(self.y_size_lbl, 2, 0, 1, 1)
@@ -1023,6 +1061,7 @@ class Ui_MainWindow(object):
         self.origin_lbl = QtWidgets.QLabel(self.measure_gb)
         self.origin_lbl.setMinimumSize(QtCore.QSize(67, 0))
         self.origin_lbl.setFont(font)
+        self.origin_lbl.setText("Origin")
 
 
         self.center_btn = QtWidgets.QPushButton(self.measure_gb)
@@ -1074,24 +1113,30 @@ class Ui_MainWindow(object):
         self.xy_plane_btn.setFont(font)
         self.xy_plane_btn.setAutoFillBackground(True)
         self.xy_plane_btn.setStyleSheet(self.style_selected)
+        self.xy_plane_btn.setText("XY")
+        
 
         self.xz_plane_btn = QtWidgets.QPushButton(self.measure_gb)
         self.xz_plane_btn.setMinimumWidth(50)
         self.xz_plane_btn.setMinimumHeight(50)
         self.xz_plane_btn.setMaximumWidth(50)
         self.xz_plane_btn.setFont(font)
+        self.xz_plane_btn.setText("XZ")
 
         self.yz_plane_btn = QtWidgets.QPushButton(self.measure_gb)
         self.yz_plane_btn.setMinimumWidth(50)
         self.yz_plane_btn.setMinimumHeight(50)
         self.yz_plane_btn.setMaximumWidth(50)
         self.yz_plane_btn.setFont(font)
+        self.yz_plane_btn.setText("YZ")
 
         self.plane_ly = QtWidgets.QHBoxLayout()
         self.plane_ly.addWidget(self.plane_lbl)
         self.plane_ly.addWidget(self.xy_plane_btn)
         self.plane_ly.addWidget(self.xz_plane_btn)
         self.plane_ly.addWidget(self.yz_plane_btn)
+        self.plane_lbl.setText("Plane")
+        
         
         # ------------------- measure type
         self.mes_type_ly = QtWidgets.QVBoxLayout()
@@ -1202,7 +1247,6 @@ class Ui_MainWindow(object):
         MainWindow.setCentralWidget(self.main_widget)
 
 
-        self.retranslateUi(MainWindow)
         self.move_cb.setCurrentIndex(1)
         self.step_cb.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
@@ -1213,54 +1257,7 @@ class Ui_MainWindow(object):
         # MainWindow.setTabOrder(self.port_cb, self.open_btn)
         # MainWindow.setTabOrder(self.open_btn, self.graphicsView)
 
-    def retranslateUi(self, MainWindow):
-        _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
-        self.connection_gb.setTitle(_translate("MainWindow", "Connection"))
-        self.port_lbl.setText(_translate("MainWindow", "Port:"))
-        self.open_btn.setText(_translate("MainWindow", "Open"))
-        self.refresh_btn.setText(_translate("MainWindow", "Refresh"))
-        self.port_cb.setPlaceholderText(_translate("MainWindow", "..."))
-        self.control_gb.setTitle(_translate("MainWindow", "Control"))
-        self.home_x_btn.setText(_translate("MainWindow", "X"))
-        self.home_y_btn.setText(_translate("MainWindow", "Y"))
-        self.home_z_btn.setText(_translate("MainWindow", "Z"))
-        self.zero_x_btn.setText(_translate("MainWindow", "X"))
-        self.zero_y_btn.setText(_translate("MainWindow", "Y"))
-        self.zero_z_btn.setText(_translate("MainWindow", "Z"))
-        self.move_lbl.setText(_translate("MainWindow", "Move (mm)"))
-        self.move_cb.setCurrentText(_translate("MainWindow", "0.5"))
-        self.move_cb.setPlaceholderText(_translate("MainWindow", "..."))
-        self.move_cb.setItemText(0, _translate("MainWindow", "0.1"))
-        self.move_cb.setItemText(1, _translate("MainWindow", "0.5"))
-        self.move_cb.setItemText(2, _translate("MainWindow", "1"))
-        self.move_cb.setItemText(3, _translate("MainWindow", "10"))
-        self.move_cb.setItemText(4, _translate("MainWindow", "50"))
-        self.x_move_lbl.setText(_translate("MainWindow", "X"))
-        self.move_x_l_btn.setText(_translate("MainWindow", "<"))
-        self.move_x_r_btn.setText(_translate("MainWindow", ">"))
-        self.y_move_lbl.setText(_translate("MainWindow", "Y"))
-        self.move_y_l_btn.setText(_translate("MainWindow", "<"))
-        self.move_y_r_btn.setText(_translate("MainWindow", ">"))
-        self.z_move_lbl.setText(_translate("MainWindow", "Z"))
-        self.move_z_l_btn.setText(_translate("MainWindow", "<"))
-        self.move_z_r_btn.setText(_translate("MainWindow", ">"))
-        self.measure_gb.setTitle(_translate("MainWindow", "Measure"))
-        self.step_lbl.setText(_translate("MainWindow", "Step (mm)"))
-        self.step_cb.setCurrentText(_translate("MainWindow", "0.1"))
-        self.step_cb.setPlaceholderText(_translate("MainWindow", "..."))
-        self.step_cb.setItemText(0, _translate("MainWindow", "0.1"))
-        self.step_cb.setItemText(1, _translate("MainWindow", "0.5"))
-        self.step_cb.setItemText(2, _translate("MainWindow", "1"))
-        self.y_size_lbl.setText(_translate("MainWindow", "Y"))
-        self.x_size_lbl.setText(_translate("MainWindow", "X"))
-        self.z_size_lbl.setText(_translate("MainWindow", "Z"))
-        self.cell_size_lbl.setText(_translate("MainWindow", "Cell Size (mm)"))
-        self.origin_lbl.setText(_translate("MainWindow", "Origin"))
-        self.plane_lbl.setText(_translate("MainWindow", "Plane"))
-        self.xy_plane_btn.setText(_translate("MainWindow", "XY"))
-        self.xz_plane_btn.setText(_translate("MainWindow", "XZ"))
-        self.yz_plane_btn.setText(_translate("MainWindow", "YZ"))
+
 
 if __name__ == "__main__":
     import sys
